@@ -19,7 +19,11 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Medical Science Apps."
 ]
 
-dependencies = []
+dependencies = [
+    "matplotlib>=3.10.8",
+    "numpy>=2.2.6",
+    "pyqt6>=6.10.2",
+]
 
 # Important: entry point, which is used by Finitewave
 # Replace "model_template" with the actual model's ID. 
