@@ -1,7 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-
-from implementation.model_0d import Model0D, Stimulation
+from implementation.beeler_reuter_0d import BeelerReuter0D, Stimulation
 
 
 def prepare_model(model_class, dt, curr_dur, curr_value, t_prebeats):
@@ -27,17 +27,19 @@ def prepare_model(model_class, dt, curr_dur, curr_value, t_prebeats):
         Configured and initialized model ready for simulation.
     """
 
-    stimulations = [Stimulation(t_start=0.0, duration=curr_dur, amplitude=curr_value),
-                    Stimulation(t_start=t_prebeats, duration=curr_dur, amplitude=curr_value),
-                    Stimulation(t_start=2*t_prebeats, duration=curr_dur, amplitude=curr_value),
-                    Stimulation(t_start=3*t_prebeats, duration=curr_dur, amplitude=curr_value)]
+    stimulations = [
+        Stimulation(t_start=0.0, duration=curr_dur, amplitude=curr_value),
+        Stimulation(t_start=t_prebeats, duration=curr_dur, amplitude=curr_value),
+        Stimulation(t_start=2 * t_prebeats, duration=curr_dur, amplitude=curr_value),
+        Stimulation(t_start=3 * t_prebeats, duration=curr_dur, amplitude=curr_value),
+    ]
 
     model = model_class(dt=dt, stimulations=stimulations)
 
     return model
 
 
-def calculate_apd(u, dt, threshold, beat_index=3):
+def calculate_apd(u, dt, beat_index=3):
     """
     Calculates the action potential duration (APD) for a single beat (third by default).
 
@@ -47,16 +49,18 @@ def calculate_apd(u, dt, threshold, beat_index=3):
         Membrane potential time series.
     dt : float
         Time step of the simulation (ms).
-    threshold : float
-        Voltage threshold to define APD90 (e.g., -70 mV or 0.1 for normalized models).
     beat_index : int, optional
         Index of the beat to analyze (default is 3).
 
     Returns
     -------
     apd : float or None
-        Duration of the action potential (ms or model units), or None if no complete AP was found.
+        Duration of the action potential (ms or model units),
+        or None if no complete AP was found.
     """
+    threshold = u.max() - np.ptp(u) * 0.9
+    print(threshold)
+
     up_idx = np.where((u[:-1] < threshold) & (u[1:] >= threshold))[0]
     down_idx = np.where((u[:-1] > threshold) & (u[1:] <= threshold))[0]
 
@@ -77,9 +81,16 @@ def test_model_attributes():
     Test that the model has the expected attributes.
     Checks for the presence of key variables and parameters in the 0D Model.
     """
-    model = Model0D(dt=0.01, stimulations=[])
+    model = BeelerReuter0D(dt=0.01, stimulations=[])
 
-    assert 'u' in model.variables, "Model should have variable 'u'"
+    assert "u" in model.variables, "Model should have variable 'u'"
+    assert "x1" in model.variables, "Model should have variable 'x1'"
+    assert "m" in model.variables, "Model should have variable 'm'"
+    assert "h" in model.variables, "Model should have variable 'h'"
+    assert "j" in model.variables, "Model should have variable 'j'"
+    assert "d" in model.variables, "Model should have variable 'd'"
+    assert "f" in model.variables, "Model should have variable 'f'"
+    assert "cai" in model.variables, "Model should have variable 'cai'"
 
 
 def test_model_run():
@@ -88,15 +99,37 @@ def test_model_run():
     Runs the 0D Model with a predefined stimulation protocol and checks
     that the membrane potential 'u' stays within expected physiological ranges.
     """
-    t_prebeats = 1000.0 # interval between preconditioning stimuli (ms or model units).
-    t_calc = 1000.0     # time after the last preconditioning beat to continue recording (ms or model units).
-    t_max = 3*t_prebeats + t_calc
-    model = prepare_model(Model0D, dt=0.01, curr_dur=0.5, curr_value=5.0, t_prebeats=t_prebeats)
+    t_prebeats = 1000.0  # interval between preconditioning stimuli (ms or model units).
+    t_calc = 1000.0  # time after the last preconditioning beat to continue recording (ms or model units).
+    t_max = 3 * t_prebeats + t_calc
+    model = prepare_model(
+        BeelerReuter0D, dt=0.01, curr_dur=0.25, curr_value=1.0, t_prebeats=t_prebeats
+    )
     model.run(t_max=t_max)
-    u = np.array(model.history['u'])
+    u = np.array(model.history["u"])
 
-    assert np.max(u) == pytest.approx(20.0, abs=0.1)
-    assert np.min(u) == pytest.approx(-80.0, abs=0.01)
+    assert np.max(u) == pytest.approx(28, abs=1)
+    assert np.min(u) == pytest.approx(-84, abs=1)
 
-    apd = calculate_apd(u, model.dt, threshold=0.1)
-    assert 350 <= apd <= 400, f"Model is out of expected range {apd}"
+    apd = calculate_apd(u, model.dt, beat_index=1)
+    assert apd == pytest.approx(285, abs=1)
+
+
+def compare_figure():
+    """
+    Comparison between the model and figure data.
+    The data is extracted using WebPlotDigitizer (https://apps.automeris.io/wpd4/).
+    The stimulation offset is choosen in order to align with the data.
+    """
+    stimulations = [Stimulation(t_start=45.0, duration=0.25, amplitude=1.0)]
+    t_max = 500.0
+
+    model = BeelerReuter0D(dt=0.01, stimulations=stimulations)
+    model.run(t_max=t_max)
+    u = np.array(model.history["u"])
+
+    t_ref, u_ref = np.loadtxt("tests/action_potential.csv", delimiter=",", skiprows=2).T
+
+    plt.plot(np.arange(len(u)) * model.dt, u)
+    plt.scatter(t_ref, u_ref, c="r")
+    plt.show()
