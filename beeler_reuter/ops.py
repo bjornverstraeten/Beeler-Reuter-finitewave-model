@@ -157,7 +157,7 @@ def calc_rhs(u, x1, m, h, j, d, f, cai, gna, gnac, gs, E_Na, cm, exp=math.exp) -
     ix1 = calc_ix1(u, x1, exp=exp)
     ina = calc_ina(u, m, h, j, gna, gnac, E_Na)
     isi = calc_isi(u, d, f, cai, gs)
-    return -ik1 - ix1 - ina - isi
+    return -(1 / cm) * (ik1 + ix1 + ina + isi)
 
 
 def calc_ik1(u, exp=math.exp) -> float:
@@ -179,7 +179,7 @@ def calc_ik1(u, exp=math.exp) -> float:
     """
     a1 = 4 * (exp(0.04 * (u + 85)) - 1) / (exp(0.08 * (u + 53)) + exp(0.04 * (u + 53)))
     if u == -23:
-        return 0.35 * (a1 + 1)
+        return 0.35 * (a1 + 0.2)
 
     return 0.35 * (a1 + 0.2 * (u + 23) / (1 - exp(-0.04 * (u + 23))))
 
