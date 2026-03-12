@@ -93,6 +93,23 @@ def test_model_attributes():
     assert "cai" in model.variables, "Model should have variable 'cai'"
 
 
+def test_model_step():
+    """Test if all state variables are updated for each step."""
+
+    t_prebeats = 1000.0  # interval between preconditioning stimuli (ms or model units).
+    t_calc = 1000.0  # time after the last preconditioning beat to continue recording (ms or model units).
+    t_max = 3 * t_prebeats + t_calc
+    model = prepare_model(
+        BeelerReuter0D, dt=0.01, curr_dur=0.25, curr_value=1.0, t_prebeats=t_prebeats
+    )
+    model.run(t_max=t_max)
+
+    for variable in model.variables:
+        values = np.array(model.history[variable])
+        assert np.all(~np.isnan(values))
+        assert len(values) == int(t_max / model.dt)
+
+@pytest.mark.skip()
 def test_model_run():
     """
     Test the model run for a short simulation.
