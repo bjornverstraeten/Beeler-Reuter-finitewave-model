@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+title: Beeler-Reuter-finitewave-model
+message: "If you use Finitewave in your research, please cite this repository."
+authors:
+  - family-names: Verstraeten
+    given-names: Bjorn
+repository-code: https://github.com/bjornverstraeten/Beeler-Reuter-finitewave-model
+license: MIT
