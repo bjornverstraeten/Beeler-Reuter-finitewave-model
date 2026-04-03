@@ -1,4 +1,4 @@
-## Finitewave model template (replace with the model name)
+## Beeler-Reuter Finitewave model
 
 The Beeler-Reuter model is a cardiac ionic model of mammalian ventricular myocardial fibres using the Hodgkin-Huxley formalism.
 The model is based on ionic currents that have been measured by the voltage-clamp method.
